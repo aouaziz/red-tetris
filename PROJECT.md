@@ -1,4 +1,8 @@
-
+---
+status: Mandatory implementation plan
+title: Red Tetris — Project Plan (Condensed)
+version: 2
+---
 
 # Red Tetris — Project Plan
 
@@ -14,7 +18,7 @@ red-tetris/
 ├── server/
 │   ├── domain/            Player.ts  Piece.ts  Game.ts
 │   ├── engine/             pure Tetris functions
-│   ├── socket/             Socket.IO handlers/protocol
+│   ├── socket/             Socket.IO middleware (fully encapsulated)
 │   ├── http/                static SPA delivery
 │   └── entrypoint
 ├── tests/
@@ -62,7 +66,8 @@ positions.
 floor, and block collision; rejected rotation. No invented wall-kicks.
 
 **6 — Gravity & locking.** Constant gravity; touch-pile → stays
-adjustable one frame → locks next frame if still grounded.
+adjustable for that tick → locks next tick if still grounded. Hard
+drop locks immediately, no adjustment tick.
 
 **7 — Line clearing & top-out.** Detect/remove completed rows, shift
 remaining rows, preserve dimensions, detect failed spawn → elimination.
@@ -80,17 +85,20 @@ computes transitions. Gate: full local game lifecycle works with no
 Socket.IO involved.
 
 **11 — Socket.IO protocol.** Define events for join/lobby/start/
-restart/actions/state/spectrum/end/errors/disconnects. Validate
-payloads, use rooms, stay server-authoritative. Gate: two real clients
-can join → lobby → start → play → get state → clear lines → get
-garbage → finish.
+relaunch/actions/state/spectrum/end/errors/disconnects. Validate
+payloads, use rooms, stay server-authoritative, and put all socket
+wiring behind one middleware layer (no raw `socket.on` in domain
+code). Gate: two real clients can join → lobby → start → play → get
+state → clear lines → get garbage → finish → winner relaunches.
 
 **12 — HTTP & SPA delivery.** Serve `index.html`, bundle, static
-assets, SPA fallback. Gate: opening a room URL directly loads the app.
+assets, SPA fallback. Gate: opening a hash-based room URL
+(`/#<room>/<player_name>`) directly loads the app.
 
 **13 — React client foundation.** Functional components, Hooks, no
-`this`, router, predictable state, socket connection management. Gate:
-connect → join room → receive lobby → display players.
+`this`, `HashRouter` (URL is hash-based, not path-based), predictable
+state, socket connection management. Gate: connect → join room →
+receive lobby → display players.
 
 **14 — Board UI.** CSS Grid, 10×20 cells, HTML/CSS only (no
 Canvas/SVG/table/jQuery). Gate: board matches server state.
@@ -102,9 +110,10 @@ controls, status, game-over — spectrum updates in real time.
 HTML controls for accessibility. No game logic duplicated client-side.
 
 **17 — Multiplayer hardening.** Verify: 2p, 3p, solo, host disconnect,
-non-host disconnect, mid-game join rejection, concurrent rooms, winner
-detection, restart, room cleanup. No cross-room leakage or orphaned
-lifecycles.
+non-host disconnect, mid-game join rejection, join allowed in the
+post-game/pre-relaunch window, winner relaunch, winner-left-so-
+replacement relaunches, concurrent rooms, winner detection, room
+cleanup. No cross-room leakage or orphaned lifecycles.
 
 **18 — Coverage gate.** Meet RULES.md minimums (70/70/70/50); internal
 stretch target 80/80/80/65. No tests written purely to pad numbers.
@@ -120,9 +129,9 @@ test:coverage / build`, then manual browser check.
 overview, setup, URL format, controls, protocol overview, test
 commands, known limitations, bonus features.
 
-**22 — Bonus** (only once everything mandatory is green): scoring,
-score persistence, extra modes, invisible pieces, increased gravity —
-isolated from mandatory correctness.
+**22 — Bonus** (only once mandatory is PERFECT — see RULES.md
+§"Bonus"): see `BONUS.md` for the feature list, scope, and gate for
+each.
 
 ## Final Invariant
 

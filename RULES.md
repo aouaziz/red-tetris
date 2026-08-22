@@ -1,3 +1,8 @@
+---
+source: Red Tetris v5.2 subject
+title: Red Tetris — Rules (Condensed)
+version: 2
+---
 
 # Red Tetris — Rules
 
@@ -33,6 +38,9 @@ start/restart, elimination until one player remains.
 - `Game` orchestrates but doesn't contain Tetris algorithms — those live
   in the pure engine. Socket handlers stay transport/orchestration only,
   validate all incoming payloads.
+- **Socket.IO must be fully encapsulated in a middleware layer** — no raw
+  `socket.on(...)` calls scattered through domain/business logic. All
+  socket wiring goes through one place.
 - No `shared/` package — not required, don't add it for looks.
 
 ## Pure Game Engine
@@ -54,8 +62,10 @@ server/src/
 ## Tetris Rules
 
 - Board: 10 cols × 20 rows. Original Tetrimino shapes + rotation.
-- Constant-speed gravity. Lock: piece touching the pile stays adjustable
-  for one more frame, then locks if still grounded.
+- Constant-speed gravity. Lock: piece touching the pile can still be
+  moved during that one timer tick, then locks if still grounded on the
+  next tick — **except** after a hard drop (forced fall), which locks
+  immediately with no adjustment window.
 - Controls: ← move left · → move right · ↑ rotate · ↓ soft drop · Space hard drop.
 - Scoring is bonus-only, not mandatory.
 - **Garbage**: clearing `n` lines sends opponents `n − 1` indestructible
@@ -79,12 +89,17 @@ victory, or authoritative positions.
 
 ## Game Management
 
-- Join via URL containing room name + player name (SPA router, e.g.
-  React Router).
-- First joiner is host; host controls start/restart.
-- If host leaves, server reassigns host to a remaining player.
-- No joining mid-game — only before the next round.
-- Game ends when one player remains. Solo (1-player) games are valid.
+- **URL is hash-based**: `http://<host>:<port>/#<room>/<player_name>`.
+  Use `HashRouter` (or manual hash parsing) — not `BrowserRouter`.
+- First joiner becomes host; only the host can launch the game.
+- No joining once a game is in progress.
+- Game ends when one player remains (the winner).
+- **Relaunch**: after the game ends, only the **winner** (top player)
+  can relaunch. If the winner has left, a new/remaining player takes
+  their place and can launch instead. New players *can* join during
+  this post-game, pre-relaunch window — this is the one exception to
+  "no mid-game joining."
+- Solo (1-player) games are valid.
 - Multiple concurrent games, state isolated per room.
 
 ## Testing
@@ -100,10 +115,12 @@ Coverage minimums — all four required:
 | Branches   | 50% |
 
 Cover: board/piece geometry, collision, movement, rotation, gravity,
-lock timing, line clearing, garbage, spectrum, top-out, immutability,
-player lifecycle, host reassignment, solo mode, concurrent rooms,
-socket events + invalid payloads, mid-game join rejection, disconnects,
-winner detection.
+lock timing (including immediate lock on hard drop), line clearing,
+garbage, spectrum, top-out, immutability, player lifecycle, host
+reassignment, solo mode, concurrent rooms, socket events + invalid
+payloads, mid-game join rejection, join-window-before-relaunch,
+winner-relaunch (and replacement if winner left), disconnects, winner
+detection.
 
 ## Security
 
@@ -153,5 +170,12 @@ npm run build
 
 ## Bonus (only after mandatory is done and passing)
 
-Scoring, persistent scores, extra modes, invisible pieces, increased
-gravity — must never break mandatory behavior.
+Per the evaluation scale: bonus is only considered if the mandatory
+part is **PERFECT** — completed, with behavior that "cannot be
+faulted, even because of the slightest mistake." A single mandatory
+flaw zeroes out every bonus, no matter how good.
+
+Each bonus is graded 0–5 individually: must be at least a little
+useful and 100% functional — no half-implemented bonus features.
+
+See `BONUS.md` for planned bonus features and their scope.

@@ -1,0 +1,344 @@
+/* === Reset & Base === */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: #0f0f1a;
+  color: #e0e0e0;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  min-height: 100vh;
+}
+
+#root {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+
+/* === Board === */
+.board {
+  display: grid;
+  grid-template-columns: repeat(10, 28px);
+  grid-template-rows: repeat(20, 28px);
+  gap: 1px;
+  background: #1a1a2e;
+  border: 2px solid #333;
+  border-radius: 4px;
+  padding: 2px;
+}
+
+.cell {
+  width: 28px;
+  height: 28px;
+  border-radius: 2px;
+}
+
+.cell-empty {
+  background: #1a1a2e;
+}
+.cell-I {
+  background: #00f0f0;
+}
+.cell-O {
+  background: #f0f000;
+}
+.cell-T {
+  background: #a020f0;
+}
+.cell-S {
+  background: #00f020;
+}
+.cell-Z {
+  background: #f02020;
+}
+.cell-J {
+  background: #2020f0;
+}
+.cell-L {
+  background: #f0a020;
+}
+.cell-G {
+  background: #666;
+  border: 1px solid #888;
+}
+
+/* === Game Layout === */
+.game-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.game-layout {
+  display: flex;
+  gap: 40px;
+  align-items: flex-start;
+  justify-content: center;
+  position: relative;
+}
+
+.game-main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+/* === Controls === */
+.controls {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.ctrl-btn {
+  width: 48px;
+  height: 48px;
+  font-size: 20px;
+  background: #2a2a3e;
+  color: #e0e0e0;
+  border: 1px solid #444;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.ctrl-btn:hover {
+  background: #3a3a5e;
+}
+.ctrl-btn:active {
+  background: #4a4a6e;
+}
+.ctrl-space {
+  width: 72px;
+}
+
+/* === Spectrum === */
+.player-list {
+  min-width: 120px;
+}
+
+.player-list h3 {
+  margin-bottom: 12px;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #888;
+}
+
+.spectrum-container {
+  margin-bottom: 16px;
+}
+
+.spectrum-dead {
+  opacity: 0.4;
+}
+
+.spectrum {
+  display: flex;
+  gap: 2px;
+  height: 100px;
+  align-items: flex-end;
+  background: #1a1a2e;
+  border: 1px solid #333;
+  border-radius: 4px;
+  padding: 2px;
+}
+
+.spectrum-col {
+  flex: 1;
+  display: flex;
+  align-items: flex-end;
+  height: 100%;
+}
+
+.spectrum-bar {
+  width: 100%;
+  background: #4a90d9;
+  border-radius: 1px;
+  min-height: 0;
+  transition: height 0.2s;
+}
+
+.spectrum-name {
+  text-align: center;
+  font-size: 12px;
+  margin-top: 4px;
+  color: #aaa;
+}
+
+/* === Lobby === */
+.lobby {
+  background: #1a1a2e;
+  border: 1px solid #333;
+  border-radius: 12px;
+  padding: 32px;
+  min-width: 320px;
+  text-align: center;
+}
+
+.lobby h2 {
+  margin-bottom: 20px;
+  color: #f04040;
+}
+
+.lobby h3 {
+  margin-bottom: 12px;
+  color: #888;
+  font-size: 14px;
+  text-transform: uppercase;
+}
+
+.lobby ul {
+  list-style: none;
+  margin-bottom: 20px;
+}
+
+.lobby li {
+  padding: 8px 12px;
+  margin: 4px 0;
+  background: #252540;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.lobby li.self {
+  border: 1px solid #4a90d9;
+}
+
+.badge {
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.host-badge {
+  background: #f0a020;
+  color: #000;
+}
+.you-badge {
+  background: #4a90d9;
+  color: #fff;
+}
+
+/* === Buttons === */
+.btn {
+  padding: 12px 24px;
+  font-size: 16px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.15s;
+}
+
+.btn-start,
+.btn-restart {
+  background: #f04040;
+  color: #fff;
+}
+
+.btn-start:hover,
+.btn-restart:hover {
+  background: #d03030;
+}
+
+.btn-join {
+  background: #4a90d9;
+  color: #fff;
+  width: 100%;
+}
+
+.btn-join:hover {
+  background: #3a80c9;
+}
+
+/* === Home / Join Form === */
+.home {
+  text-align: center;
+}
+
+.home h1 {
+  color: #f04040;
+  font-size: 48px;
+  margin-bottom: 32px;
+}
+
+.join-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 280px;
+}
+
+.join-form input {
+  padding: 12px 16px;
+  font-size: 16px;
+  background: #1a1a2e;
+  border: 1px solid #333;
+  border-radius: 8px;
+  color: #e0e0e0;
+  outline: none;
+}
+
+.join-form input:focus {
+  border-color: #4a90d9;
+}
+
+/* === Game Over === */
+.game-over-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 100;
+}
+
+.game-over-card {
+  background: #1a1a2e;
+  border: 2px solid #f04040;
+  border-radius: 16px;
+  padding: 40px;
+  text-align: center;
+  min-width: 300px;
+}
+
+.game-over-card h2 {
+  color: #f04040;
+  font-size: 32px;
+  margin-bottom: 16px;
+}
+
+.winner-text {
+  font-size: 20px;
+  margin-bottom: 24px;
+}
+
+.waiting-msg {
+  color: #888;
+  font-style: italic;
+}
+
+/* === Error === */
+.error-bar {
+  background: #f04040;
+  color: #fff;
+  padding: 8px 16px;
+  border-radius: 6px;
+  margin-bottom: 16px;
+  font-size: 14px;
+}
