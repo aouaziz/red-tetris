@@ -45,12 +45,20 @@ export function registerSocketHandlers(io: SocketIOServer, manager: GameManager)
       const player = game.addPlayer(socket.id, name);
       if (!player) {
         socket.emit('error', 'Cannot join game in progress');
+        socket.emit('rejected', {
+          reason: 'This room is currently in progress. You cannot join mid-game.',
+          room,
+        });
         return;
       }
 
       socketData.set(socket.id, { room, playerId: socket.id });
       socket.join(room);
-      broadcastLobby(io, game, room);
+      if (game.status === 'playing') {
+        socket.emit('state', game.stateFor(socket.id));
+      } else {
+        broadcastLobby(io, game, room);
+      }
     });
 
     socket.on('start', () => {

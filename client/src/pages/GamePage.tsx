@@ -14,14 +14,25 @@ interface GamePageProps {
 }
 
 const GamePage: React.FC<GamePageProps> = ({ socket, room, playerName }) => {
-  const { lobby, gameState, error } = useGame(socket);
+  const { lobby, gameState, error, rejected } = useGame(socket);
   const status = gameState?.status ?? lobby?.status ?? "lobby";
   const selfAlive = gameState?.self?.alive ?? false;
 
   useKeyboard(socket, status === "playing" && selfAlive);
 
   useEffect(() => {
-    socket.emit("join", { room, name: playerName });
+    const emitJoin = () => {
+      socket.emit("join", { room, name: playerName });
+    };
+
+    if (socket.connected) {
+      emitJoin();
+    }
+    socket.on("connect", emitJoin);
+
+    return () => {
+      socket.off("connect", emitJoin);
+    };
   }, [socket, room, playerName]);
 
   const currentId = socket.id ?? "";
@@ -29,6 +40,35 @@ const GamePage: React.FC<GamePageProps> = ({ socket, room, playerName }) => {
   const handleAction = (action: string) => {
     socket.emit("action", action);
   };
+
+  const handleLeave = () => {
+    window.location.hash = "";
+  };
+
+  if (rejected) {
+    return (
+      <div className="game-page">
+        <div className="lobby">
+          <h2>⚠️ Game In Progress</h2>
+          <p className="mode-desc">
+            Room <strong className="room-highlight">{room}</strong> is currently playing a match.
+            New players cannot enter while a round is active.
+          </p>
+          <div className="lobby-actions">
+            <button
+              className="btn btn-join btn-block"
+              onClick={() => socket.emit("join", { room, name: playerName })}
+            >
+              🔄 Retry Joining
+            </button>
+            <button className="btn btn-secondary btn-block" onClick={handleLeave}>
+              Back to Main Menu
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="game-page">
@@ -48,30 +88,35 @@ const GamePage: React.FC<GamePageProps> = ({ socket, room, playerName }) => {
                 <button
                   className="ctrl-btn"
                   onClick={() => handleAction("left")}
+                  aria-label="Move left"
                 >
                   ←
                 </button>
                 <button
                   className="ctrl-btn"
                   onClick={() => handleAction("rotate")}
+                  aria-label="Rotate"
                 >
                   ↑
                 </button>
                 <button
                   className="ctrl-btn"
                   onClick={() => handleAction("soft")}
+                  aria-label="Soft drop"
                 >
                   ↓
                 </button>
                 <button
                   className="ctrl-btn"
                   onClick={() => handleAction("right")}
+                  aria-label="Move right"
                 >
                   →
                 </button>
                 <button
                   className="ctrl-btn ctrl-space"
                   onClick={() => handleAction("hard")}
+                  aria-label="Hard drop"
                 >
                   ⎵
                 </button>

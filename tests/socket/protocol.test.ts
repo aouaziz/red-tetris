@@ -17,6 +17,12 @@ describe('protocol', () => {
     it('too long (>50 chars) -> null', () => {
       expect(parseJoin({ room: 'a'.repeat(51), name: 'n1' })).toBeNull();
     });
+    it('disallows delimiter characters in room or name', () => {
+      expect(parseJoin({ room: 'r/1', name: 'n1' })).toBeNull();
+      expect(parseJoin({ room: 'r[1]', name: 'n1' })).toBeNull();
+      expect(parseJoin({ room: 'r1', name: 'n/1' })).toBeNull();
+      expect(parseJoin({ room: 'r1', name: 'n[1]' })).toBeNull();
+    });
     it('null/undefined/number input -> null', () => {
       expect(parseJoin(null)).toBeNull();
       expect(parseJoin(undefined)).toBeNull();

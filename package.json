@@ -4,16 +4,17 @@
   "private": true,
   "description": "Networked multiplayer Tetris — full stack JavaScript/TypeScript",
   "scripts": {
-    "dev:server": "tsx watch server/src/index.ts",
-    "dev:client": "vite",
+    "dev": "export PATH=\"$PWD/.node/bin:$PATH\" && npm run build && npm start",
+    "dev:server": "export PATH=\"$PWD/.node/bin:$PATH\" && tsx watch server/src/index.ts",
+    "dev:client": "export PATH=\"$PWD/.node/bin:$PATH\" && vite",
     "build": "npm run build:client && npm run build:server",
-    "build:client": "vite build",
-    "build:server": "tsc -p tsconfig.server.json",
-    "start": "node dist/server/index.js",
-    "test": "vitest run",
-    "test:coverage": "vitest run --coverage",
-    "lint": "eslint .",
-    "typecheck": "tsc -p tsconfig.server.json --noEmit && tsc -p client/tsconfig.json --noEmit"
+    "build:client": "export PATH=\"$PWD/.node/bin:$PATH\" && vite build",
+    "build:server": "export PATH=\"$PWD/.node/bin:$PATH\" && tsc -p tsconfig.server.json",
+    "start": "export PATH=\"$PWD/.node/bin:$PATH\" && node dist/server/index.js",
+    "test": "export PATH=\"$PWD/.node/bin:$PATH\" && vitest run",
+    "test:coverage": "export PATH=\"$PWD/.node/bin:$PATH\" && vitest run --coverage",
+    "lint": "export PATH=\"$PWD/.node/bin:$PATH\" && eslint .",
+    "typecheck": "export PATH=\"$PWD/.node/bin:$PATH\" && tsc -p tsconfig.server.json --noEmit && tsc -p client/tsconfig.json --noEmit"
   },
   "dependencies": {
     "express": "^4.19.2",

@@ -31,46 +31,61 @@ export interface GameState {
   players: PublicPlayer[];
 }
 
+export interface RejectedData {
+  reason: string;
+  room: string;
+}
+
 export interface UseGameReturn {
   lobby: LobbyData | null;
   gameState: GameState | null;
   error: string | null;
+  rejected: RejectedData | null;
 }
 
 function useGame(socket: Socket | null): UseGameReturn {
   const [lobby, setLobby] = useState<LobbyData | null>(null);
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [rejected, setRejected] = useState<RejectedData | null>(null);
 
   useEffect(() => {
     if (!socket) return;
 
     const onLobby = (data: LobbyData) => {
       setLobby(data);
+      setRejected(null);
     };
 
     const onState = (data: GameState) => {
       setGameState(data);
       setLobby((prev) => (prev ? { ...prev, status: data.status } : null));
+      setRejected(null);
     };
 
     const onError = (msg: string) => {
       setError(msg);
-      setTimeout(() => setError(null), 3000);
+      setTimeout(() => setError(null), 4000);
+    };
+
+    const onRejected = (data: RejectedData) => {
+      setRejected(data);
     };
 
     socket.on("lobby", onLobby);
     socket.on("state", onState);
     socket.on("error", onError);
+    socket.on("rejected", onRejected);
 
     return () => {
       socket.off("lobby", onLobby);
       socket.off("state", onState);
       socket.off("error", onError);
+      socket.off("rejected", onRejected);
     };
   }, [socket]);
 
-  return { lobby, gameState, error };
+  return { lobby, gameState, error, rejected };
 }
 
 export default useGame;

@@ -22,6 +22,10 @@ const GameOver: React.FC<GameOverProps> = ({
     socket.emit("restart");
   };
 
+  const handleExit = () => {
+    window.location.hash = "";
+  };
+
   return (
     <div className="game-over-overlay">
       <div className="game-over-card">
@@ -36,11 +40,16 @@ const GameOver: React.FC<GameOverProps> = ({
         ) : (
           <p className="winner-text">Game ended</p>
         )}
-        {isLauncher && (
-          <button className="btn btn-restart" onClick={handleRestart}>
-            Play Again
+        <div className="game-over-actions">
+          {isLauncher && (
+            <button className="btn btn-restart" onClick={handleRestart}>
+              Play Again
+            </button>
+          )}
+          <button className="btn btn-secondary" onClick={handleExit}>
+            Exit to Menu
           </button>
-        )}
+        </div>
         {!isLauncher && (
           <p className="waiting-msg">Waiting for winner to restart...</p>
         )}

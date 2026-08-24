@@ -16,6 +16,16 @@ export function parseJoin(payload: unknown): { room: string; name: string } | nu
   if (!r || !n || r.length > 50 || n.length > 50) {
     return null;
   }
+  if (
+    n.includes('/') ||
+    n.includes('[') ||
+    n.includes(']') ||
+    r.includes('/') ||
+    r.includes('[') ||
+    r.includes(']')
+  ) {
+    return null;
+  }
   return { room: r, name: n };
 }
 

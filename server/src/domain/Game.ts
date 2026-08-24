@@ -77,12 +77,12 @@ export class Game {
   // --- player management -------------------------------------------------
 
   addPlayer(id: string, name: string): Player | null {
-    if (this.status === "playing") {
-      return null; // no joining mid-game
-    }
     const existing = this.players.get(id);
     if (existing) {
       return existing;
+    }
+    if (this.status === "playing") {
+      return null; // no joining mid-game
     }
     const player = new Player(id, name);
     this.players.set(id, player);
