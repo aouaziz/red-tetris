@@ -18,6 +18,11 @@ const GameOver: React.FC<GameOverProps> = ({
     (p) => p.id === gameState.winnerId,
   );
 
+  // Sort players by score descending
+  const sortedPlayers = gameState.players
+    .slice()
+    .sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+
   const handleRestart = () => {
     socket.emit("restart");
   };
@@ -34,12 +39,32 @@ const GameOver: React.FC<GameOverProps> = ({
           <p className="winner-text">
             🏆{" "}
             {winnerPlayer.id === currentId
-              ? "You win!"
-              : `${winnerPlayer.name} wins!`}
+              ? "Victory! You Win!"
+              : `${winnerPlayer.name} Wins!`}
           </p>
         ) : (
-          <p className="winner-text">Game ended</p>
+          <p className="winner-text">Game Ended</p>
         )}
+
+        <div className="game-over-scores">
+          <h3>Final Standings</h3>
+          <div className="game-over-table">
+            {sortedPlayers.map((p, idx) => (
+              <div
+                key={p.id}
+                className={`score-row ${p.id === currentId ? "score-row-self" : ""}`}
+              >
+                <span className="score-rank">
+                  {idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : `#${idx + 1}`}
+                </span>
+                <span className="score-name">{p.name} {p.id === currentId ? "(You)" : ""}</span>
+                <span className="score-lines">{p.linesCleared ?? 0} lines</span>
+                <span className="score-pts">{p.score ?? 0} pts</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
         <div className="game-over-actions">
           {isLauncher && (
             <button className="btn btn-restart" onClick={handleRestart}>
@@ -51,7 +76,7 @@ const GameOver: React.FC<GameOverProps> = ({
           </button>
         </div>
         {!isLauncher && (
-          <p className="waiting-msg">Waiting for winner to restart...</p>
+          <p className="waiting-msg">Waiting for host/winner to restart...</p>
         )}
       </div>
     </div>

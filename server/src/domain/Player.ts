@@ -13,6 +13,8 @@ export class Player {
   alive = true;
   pendingGarbage = 0;
   lockPending = false;
+  score = 0;
+  linesCleared = 0;
 
   constructor(id: string, name: string) {
     this.id = id;
@@ -27,5 +29,7 @@ export class Player {
     this.alive = true;
     this.pendingGarbage = 0;
     this.lockPending = false;
+    this.score = 0;
+    this.linesCleared = 0;
   }
 }

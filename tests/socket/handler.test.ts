@@ -146,5 +146,41 @@ describe('socket handler', () => {
 
     p1.disconnect();
   });
+
+  it('handles set_mode and get_leaderboard', async () => {
+    const p1 = await createClient();
+    p1.emit('join', { room: 'mode-room', name: 'Alice' });
+
+    await new Promise<void>((resolve) => {
+      p1.on('lobby', () => resolve());
+    });
+
+    // Change mode to speed
+    const lobbySpeedPromise = new Promise<any>((resolve) => {
+      p1.on('lobby', (lobby) => {
+        if (lobby.gameMode === 'speed') resolve(lobby);
+      });
+    });
+    p1.emit('set_mode', { mode: 'speed' });
+    const speedLobby = await lobbySpeedPromise;
+    expect(speedLobby.gameMode).toBe('speed');
+
+    // Reject invalid mode
+    const errorPromise = new Promise<string>((resolve) => {
+      p1.on('error', (err) => resolve(err));
+    });
+    p1.emit('set_mode', 'invalid_mode');
+    expect(await errorPromise).toBe('Invalid game mode');
+
+    // Request leaderboard
+    const lbPromise = new Promise<any[]>((resolve) => {
+      p1.on('leaderboard', (scores) => resolve(scores));
+    });
+    p1.emit('get_leaderboard');
+    const leaderboard = await lbPromise;
+    expect(Array.isArray(leaderboard)).toBe(true);
+
+    p1.disconnect();
+  });
 });
 

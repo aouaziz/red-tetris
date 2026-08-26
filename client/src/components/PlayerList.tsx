@@ -20,6 +20,7 @@ const PlayerList: React.FC<PlayerListProps> = ({ players, currentId }) => {
           spectrum={p.spectrum}
           name={p.name}
           alive={p.alive}
+          score={p.score}
         />
       ))}
     </div>

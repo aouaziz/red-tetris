@@ -13,6 +13,12 @@ interface GamePageProps {
   playerName: string;
 }
 
+const MODE_NAMES: Record<string, string> = {
+  classic: "🕹️ Classic",
+  speed: "⚡ Fast Gravity",
+  invisible: "👻 Invisible",
+};
+
 const GamePage: React.FC<GamePageProps> = ({ socket, room, playerName }) => {
   const { lobby, gameState, error, rejected } = useGame(socket);
   const status = gameState?.status ?? lobby?.status ?? "lobby";
@@ -81,6 +87,21 @@ const GamePage: React.FC<GamePageProps> = ({ socket, room, playerName }) => {
       {(status === "playing" || status === "finished") && gameState && (
         <div className="game-layout">
           <div className="game-main">
+            <div className="game-hud">
+              <div className="hud-item">
+                <span className="hud-label">Score</span>
+                <span className="hud-value">{gameState.self?.score ?? 0}</span>
+              </div>
+              <div className="hud-item">
+                <span className="hud-label">Lines</span>
+                <span className="hud-value">{gameState.self?.linesCleared ?? 0}</span>
+              </div>
+              <div className="hud-item hud-mode">
+                <span className="hud-label">Mode</span>
+                <span className="hud-mode-badge">{MODE_NAMES[gameState.gameMode] ?? gameState.gameMode}</span>
+              </div>
+            </div>
+
             {gameState.self && <Board board={gameState.self.board} />}
 
             {status === "playing" && selfAlive && (

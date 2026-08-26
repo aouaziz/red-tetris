@@ -8,10 +8,13 @@ import { clearLines } from "../engine/lines";
 import { addGarbage } from "../engine/garbage";
 import { getSpectrum } from "../engine/spectrum";
 import { pieceCells, TETROMINOES } from "../engine/pieces";
+import { calculateLineScore, calculateDropScore } from "../engine/scoring";
+import { ScoreStore, defaultScoreStore } from "../storage/scoreStore";
 import { Player } from "./Player";
 import { Piece } from "./Piece";
 
 export type GameStatus = "lobby" | "playing" | "finished";
+export type GameMode = "classic" | "speed" | "invisible";
 export type ActionType = "left" | "right" | "rotate" | "soft" | "hard";
 
 // Small deterministic PRNG so a seeded game replays an identical piece
@@ -33,11 +36,14 @@ export interface PublicPlayer {
   alive: boolean;
   isHost: boolean;
   spectrum: number[];
+  score: number;
+  linesCleared: number;
 }
 
 export interface LobbyView {
   room: string;
   status: GameStatus;
+  gameMode: GameMode;
   hostId: string | null;
   launcherId: string | null;
   players: { id: string; name: string; isHost: boolean; alive: boolean }[];
@@ -46,10 +52,18 @@ export interface LobbyView {
 export interface StateView {
   room: string;
   status: GameStatus;
+  gameMode: GameMode;
   hostId: string | null;
   launcherId: string | null;
   winnerId: string | null;
-  self: { id: string; name: string; alive: boolean; board: Board } | null;
+  self: {
+    id: string;
+    name: string;
+    alive: boolean;
+    score: number;
+    linesCleared: number;
+    board: Board;
+  } | null;
   players: PublicPlayer[];
 }
 
@@ -62,16 +76,19 @@ export class Game {
   hostId: string | null = null;
   status: GameStatus = "lobby";
   winnerId: string | null = null;
+  gameMode: GameMode = "classic";
 
   private readonly seed: number;
   private rng: () => number;
   private sequence: TetrominoType[] = [];
   private startedWith = 0;
+  private scoreStore: ScoreStore;
 
-  constructor(id: string, seed?: number) {
+  constructor(id: string, seed?: number, scoreStore: ScoreStore = defaultScoreStore) {
     this.id = id;
     this.seed = seed ?? (Math.random() * 1e9) | 0;
     this.rng = mulberry32(this.seed);
+    this.scoreStore = scoreStore;
   }
 
   // --- player management -------------------------------------------------
@@ -113,6 +130,17 @@ export class Game {
 
   isHost(id: string): boolean {
     return this.hostId === id;
+  }
+
+  setMode(byId: string, mode: GameMode): boolean {
+    if (this.status !== "lobby" || this.hostId !== byId) {
+      return false;
+    }
+    if (mode === "classic" || mode === "speed" || mode === "invisible") {
+      this.gameMode = mode;
+      return true;
+    }
+    return false;
   }
 
   // Who can (re)launch the game right now?
@@ -227,11 +255,15 @@ export class Game {
         if (next) {
           player.piece = Piece.from(next);
           player.lockPending = false;
+          player.score += calculateDropScore("soft", 1);
         }
         break;
       }
       case "hard": {
-        player.piece = Piece.from(hardDrop(player.board, player.piece));
+        const droppedPiece = hardDrop(player.board, player.piece);
+        const dist = droppedPiece.y - player.piece.y;
+        player.score += calculateDropScore("hard", dist);
+        player.piece = Piece.from(droppedPiece);
         this.lockAndResolve(player);
         break;
       }
@@ -268,8 +300,12 @@ export class Game {
     const { board, cleared } = clearLines(player.board);
     player.board = board;
     player.lockPending = false;
-    if (cleared > 1) {
-      this.sendGarbage(player.id, cleared - 1);
+    if (cleared > 0) {
+      player.linesCleared += cleared;
+      player.score += calculateLineScore(cleared);
+      if (cleared > 1) {
+        this.sendGarbage(player.id, cleared - 1);
+      }
     }
     this.spawnFor(player);
     this.checkEnd();
@@ -288,24 +324,45 @@ export class Game {
       return;
     }
     const alive = [...this.players.values()].filter((p) => p.alive);
+    let ended = false;
     if (this.startedWith >= 2 && alive.length <= 1) {
       this.status = "finished";
       this.winnerId = alive[0]?.id ?? null;
+      ended = true;
     } else if (this.startedWith === 1 && alive.length === 0) {
       this.status = "finished";
       // Solo player is both the only participant and the "winner" for relaunch
       this.winnerId = [...this.players.values()][0]?.id ?? null;
+      ended = true;
+    }
+    if (ended) {
+      for (const player of this.players.values()) {
+        if (player.score > 0 || player.linesCleared > 0) {
+          this.scoreStore.recordScore({
+            name: player.name,
+            score: player.score,
+            lines: player.linesCleared,
+            mode: this.gameMode,
+          });
+        }
+      }
     }
   }
 
   // --- views for the socket layer ---------------------------------------
 
-  boardWithPiece(id: string): Board | null {
+  boardWithPiece(id: string, revealAll = false): Board | null {
     const player = this.players.get(id);
     if (!player) {
       return null;
     }
-    const board = player.board.map((row) => row.slice());
+    let board: Board;
+    if (this.gameMode === "invisible" && this.status === "playing" && !revealAll) {
+      // In invisible mode during gameplay, locked blocks are masked so players have to rely on memory
+      board = player.board.map((row) => row.map(() => 0 as const));
+    } else {
+      board = player.board.map((row) => row.slice());
+    }
     if (player.piece) {
       for (const cell of pieceCells(player.piece)) {
         if (
@@ -325,6 +382,7 @@ export class Game {
     return {
       room: this.id,
       status: this.status,
+      gameMode: this.gameMode,
       hostId: this.hostId,
       launcherId: this.getLauncherId(),
       players: this.order.map((id) => {
@@ -348,6 +406,8 @@ export class Game {
         alive: p.alive,
         isHost: p.id === this.hostId,
         spectrum: getSpectrum(p.board),
+        score: p.score,
+        linesCleared: p.linesCleared,
       };
     });
   }
@@ -357,6 +417,7 @@ export class Game {
     return {
       room: this.id,
       status: this.status,
+      gameMode: this.gameMode,
       hostId: this.hostId,
       launcherId: this.getLauncherId(),
       winnerId: this.winnerId,
@@ -365,6 +426,8 @@ export class Game {
             id: player.id,
             name: player.name,
             alive: player.alive,
+            score: player.score,
+            linesCleared: player.linesCleared,
             board: this.boardWithPiece(id)!,
           }
         : null,

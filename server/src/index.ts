@@ -5,12 +5,18 @@ import path from "path";
 import { GameManager } from "./domain/GameManager";
 import { registerSocketHandlers } from "./socket/handler";
 
+import { defaultScoreStore } from "./storage/scoreStore";
+
 const app = express();
 const server = createServer(app);
 const io = new Server(server, { cors: { origin: "*" } });
 
 const manager = new GameManager();
 registerSocketHandlers(io, manager);
+
+app.get("/api/leaderboard", (_req, res) => {
+  res.json(defaultScoreStore.getScores());
+});
 
 const clientPath = path.join(__dirname, "../../dist/client");
 app.use(express.static(clientPath));

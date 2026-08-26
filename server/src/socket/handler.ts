@@ -1,7 +1,8 @@
 import { Server as SocketIOServer } from 'socket.io';
 import { GameManager } from '../domain/GameManager';
 import { Game } from '../domain/Game';
-import { parseJoin, parseAction } from './protocol';
+import { parseJoin, parseAction, parseSetMode } from './protocol';
+import { defaultScoreStore } from '../storage/scoreStore';
 
 const intervals = new Map<string, NodeJS.Timeout>();
 
@@ -28,10 +29,52 @@ function broadcastLobby(io: SocketIOServer, game: Game, room: string): void {
   io.to(room).emit('lobby', game.lobby());
 }
 
+function startTickLoop(io: SocketIOServer, manager: GameManager, room: string, game: Game): void {
+  const existing = intervals.get(room);
+  if (existing) {
+    clearInterval(existing);
+  }
+  const tickDelay = game.gameMode === 'speed' ? 350 : 1000;
+  const interval = setInterval(() => {
+    const g = manager.get(room);
+    if (g) {
+      g.tick();
+      broadcastState(io, g, room);
+    } else {
+      clearInterval(interval);
+      intervals.delete(room);
+    }
+  }, tickDelay);
+  intervals.set(room, interval);
+}
+
 export function registerSocketHandlers(io: SocketIOServer, manager: GameManager): void {
   const socketData = new Map<string, { room: string; playerId: string }>();
 
   io.on('connection', (socket) => {
+    socket.on('get_leaderboard', () => {
+      socket.emit('leaderboard', defaultScoreStore.getScores());
+    });
+
+    socket.on('set_mode', (payload: unknown) => {
+      const mode = parseSetMode(payload);
+      if (!mode) {
+        socket.emit('error', 'Invalid game mode');
+        return;
+      }
+      const data = socketData.get(socket.id);
+      if (!data) return;
+      const { room } = data;
+      const game = manager.get(room);
+      if (!game) return;
+
+      if (!game.setMode(socket.id, mode)) {
+        socket.emit('error', 'Only host can change game mode in lobby');
+        return;
+      }
+      broadcastLobby(io, game, room);
+    });
+
     socket.on('join', (payload: unknown) => {
       const parsed = parseJoin(payload);
       if (!parsed) {
@@ -73,18 +116,7 @@ export function registerSocketHandlers(io: SocketIOServer, manager: GameManager)
         return;
       }
 
-      const interval = setInterval(() => {
-        const g = manager.get(room);
-        if (g) {
-          g.tick();
-          broadcastState(io, g, room);
-        } else {
-          clearInterval(interval);
-          intervals.delete(room);
-        }
-      }, 1000);
-      intervals.set(room, interval);
-
+      startTickLoop(io, manager, room, game);
       broadcastState(io, game, room);
     });
 
@@ -100,18 +132,7 @@ export function registerSocketHandlers(io: SocketIOServer, manager: GameManager)
         return;
       }
 
-      const interval = setInterval(() => {
-        const g = manager.get(room);
-        if (g) {
-          g.tick();
-          broadcastState(io, g, room);
-        } else {
-          clearInterval(interval);
-          intervals.delete(room);
-        }
-      }, 1000);
-      intervals.set(room, interval);
-
+      startTickLoop(io, manager, room, game);
       broadcastState(io, game, room);
     });
 

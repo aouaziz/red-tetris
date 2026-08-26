@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { LobbyData } from "../hooks/useGame";
+import { LobbyData, GameMode } from "../hooks/useGame";
 import { Socket } from "socket.io-client";
 
 interface LobbyProps {
@@ -8,9 +8,35 @@ interface LobbyProps {
   currentId: string;
 }
 
+const MODE_DESCRIPTIONS: Record<GameMode, { title: string; icon: string; desc: string }> = {
+  classic: {
+    title: "Classic Mode",
+    icon: "🕹️",
+    desc: "Standard gravity speed with full piece visibility.",
+  },
+  speed: {
+    title: "Increased Gravity",
+    icon: "⚡",
+    desc: "Hyper fall speed (3x gravity). Fast reflexes required!",
+  },
+  invisible: {
+    title: "Invisible Pieces",
+    icon: "👻",
+    desc: "Pieces vanish when locked onto the board. Play by memory!",
+  },
+};
+
 const Lobby: React.FC<LobbyProps> = ({ lobby, socket, currentId }) => {
   const [copied, setCopied] = useState(false);
+  const isHost = lobby.hostId === currentId;
   const isLauncher = lobby.launcherId === currentId;
+  const currentMode = lobby.gameMode || "classic";
+
+  const handleModeChange = (mode: GameMode) => {
+    if (isHost) {
+      socket.emit("set_mode", { mode });
+    }
+  };
 
   const handleStart = () => {
     socket.emit("start");
@@ -33,6 +59,32 @@ const Lobby: React.FC<LobbyProps> = ({ lobby, socket, currentId }) => {
   return (
     <div className="lobby">
       <h2>Room: <span className="room-highlight">{lobby.room}</span></h2>
+
+      <div className="lobby-mode-section">
+        <h3>Game Mode {isHost ? "(Host Choice)" : ""}</h3>
+        <div className="mode-options-grid">
+          {(["classic", "speed", "invisible"] as GameMode[]).map((mode) => {
+            const info = MODE_DESCRIPTIONS[mode];
+            const isSelected = currentMode === mode;
+            return (
+              <button
+                key={mode}
+                type="button"
+                className={`mode-option-card ${isSelected ? "selected" : ""} ${!isHost ? "read-only" : ""}`}
+                onClick={() => handleModeChange(mode)}
+                disabled={!isHost}
+              >
+                <div className="mode-option-header">
+                  <span className="mode-option-icon">{info.icon}</span>
+                  <span className="mode-option-title">{info.title}</span>
+                </div>
+                <p className="mode-option-desc">{info.desc}</p>
+                {isSelected && <span className="badge mode-active-badge">Selected</span>}
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
       <div className="lobby-players">
         <div className="lobby-players-header">

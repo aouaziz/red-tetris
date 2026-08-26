@@ -4,9 +4,10 @@ interface SpectrumProps {
   spectrum: number[];
   name: string;
   alive: boolean;
+  score?: number;
 }
 
-const Spectrum: React.FC<SpectrumProps> = ({ spectrum, name, alive }) => (
+const Spectrum: React.FC<SpectrumProps> = ({ spectrum, name, alive, score }) => (
   <div className={`spectrum-container ${alive ? "" : "spectrum-dead"}`}>
     <div className="spectrum">
       {spectrum.map((height, i) => (
@@ -18,8 +19,13 @@ const Spectrum: React.FC<SpectrumProps> = ({ spectrum, name, alive }) => (
         </div>
       ))}
     </div>
-    <div className="spectrum-name">
-      {name} {alive ? "" : "💀"}
+    <div className="spectrum-info">
+      <span className="spectrum-name">
+        {name} {alive ? "" : "💀"}
+      </span>
+      {typeof score === "number" && (
+        <span className="spectrum-score">{score} pts</span>
+      )}
     </div>
   </div>
 );

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseJoin, parseAction } from '../../server/src/socket/protocol';
+import { parseJoin, parseAction, parseSetMode } from '../../server/src/socket/protocol';
 
 describe('protocol', () => {
   describe('parseJoin', () => {
@@ -48,6 +48,25 @@ describe('protocol', () => {
       expect(parseAction(null)).toBeNull();
       expect(parseAction(undefined)).toBeNull();
       expect(parseAction(123)).toBeNull();
+    });
+  });
+
+  describe('parseSetMode', () => {
+    it('valid mode strings -> returns mode', () => {
+      expect(parseSetMode('classic')).toBe('classic');
+      expect(parseSetMode('speed')).toBe('speed');
+      expect(parseSetMode('invisible')).toBe('invisible');
+    });
+    it('valid {mode: string} object -> returns mode', () => {
+      expect(parseSetMode({ mode: 'speed' })).toBe('speed');
+    });
+    it('invalid mode string -> null', () => {
+      expect(parseSetMode('super_fast')).toBeNull();
+    });
+    it('null/undefined/number -> null', () => {
+      expect(parseSetMode(null)).toBeNull();
+      expect(parseSetMode(undefined)).toBeNull();
+      expect(parseSetMode(123)).toBeNull();
     });
   });
 });

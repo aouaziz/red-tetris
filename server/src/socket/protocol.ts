@@ -1,6 +1,7 @@
-import { ActionType } from '../domain/Game';
+import { ActionType, GameMode } from '../domain/Game';
 
 export const ACTIONS: readonly ActionType[] = ['left', 'right', 'rotate', 'soft', 'hard'];
+export const MODES: readonly GameMode[] = ['classic', 'speed', 'invisible'];
 
 // Validate an incoming join payload. Returns the trimmed values or null.
 export function parseJoin(payload: unknown): { room: string; name: string } | null {
@@ -39,4 +40,15 @@ export function parseAction(payload: unknown): ActionType | null {
         ? (payload as { type?: unknown }).type
         : undefined;
   return ACTIONS.includes(raw as ActionType) ? (raw as ActionType) : null;
+}
+
+// Validate an incoming set_mode payload. Accepts string or { mode: string }.
+export function parseSetMode(payload: unknown): GameMode | null {
+  const raw =
+    typeof payload === 'string'
+      ? payload
+      : payload && typeof payload === 'object'
+        ? (payload as { mode?: unknown }).mode
+        : undefined;
+  return MODES.includes(raw as GameMode) ? (raw as GameMode) : null;
 }
